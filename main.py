@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os.path
 import configparser
-import telnetlib
+import os.path
+import socket
 import time
 
 if not os.path.isfile("config.ini"):
-    print("config.ini not found - maybe you didn't copy (and customize) the file config-template.ini to config.ini yet?")
+    print(
+        "config.ini not found - maybe you didn't copy (and customize) the file config-template.ini to config.ini yet?")
     exit(1)
 
 config = configparser.ConfigParser()
@@ -15,14 +16,14 @@ config.read("config.ini")
 
 
 def fhem_task(fhem_cmd):
-    tc = telnetlib.Telnet(config['FHEM']['host'], config['FHEM']['telnet_port'])
-    tc.read_until(b"Password: ")
-    tc.write(config['FHEM']['password'].encode('ascii') + b"\n")
-    tc.read_until(b"\n")
-    tc.write(fhem_cmd.encode('ascii') + b"\n")
-    erg = tc.read_until(b"\n").strip().decode('ascii')
-    tc.close()
-    return erg
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((config['FHEM']['host'], int(config['FHEM']['telnet_port'])))
+    s.send(str.encode(config['FHEM']['password'] + "\n", 'ascii'))
+    s.recv(4000)
+    s.send((fhem_cmd + "\n").encode('ascii'))
+    time.sleep(0.1)
+    result = s.recv(128000)
+    return result[5:-2].decode('ascii')
 
 
 val = {}
