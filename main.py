@@ -26,18 +26,17 @@ def fhem_task(fhem_cmd):
     return result[5:-2].decode('ascii')
 
 
-val = {}
 # default values
 now = time.localtime()
-val["year"] = time.strftime("%Y", now)
-val["month"] = time.strftime("%m", now)
-val["day"] = time.strftime("%d", now)
-val["hour"] = time.strftime("%H", now)
-val["minute"] = time.strftime("%M", now)
-val["second"] = time.strftime("%S", now)
+year = time.strftime("%Y", now)
+month = time.strftime("%m", now)
+day = time.strftime("%d", now)
+hour = time.strftime("%H", now)
+minute = time.strftime("%M", now)
+second = time.strftime("%S", now)
 # FHEM values
 for req in config['REQUEST']:
-    val[req] = fhem_task(config['REQUEST'][req])
+    locals()[req] = eval(f"fhem_task(config['REQUEST']['{req}'])")
 
 pattern = config['OUTPUT']['str']
-print(pattern.format_map(val))
+print(eval(f"""f'''{pattern}'''"""))
