@@ -22,3 +22,4 @@ Humidity: 47 %
 
 - If you want a single percent sign (`%`), you have to write a double percent sign (`%%`).
 - If you want multiline output, you have to indent the second to the last line by 4 spaces each.
+- You can include Python snippets inside the curly braces if you want (example in `config-template.ini`).
