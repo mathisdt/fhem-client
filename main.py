@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import configparser
+import datetime
 import os.path
 import socket
 import time
+import re
 
 if not os.path.isfile("config.ini"):
     print(
@@ -24,6 +26,17 @@ def fhem_task(fhem_cmd):
     time.sleep(0.1)
     result = s.recv(128000)
     return result[5:-2].decode('ascii')
+
+
+def age_hours(timestamp: str, decimal_separator: str = "."):
+    try:
+        modified_timestamp = re.sub(r'Z', 'UTC', re.sub(r'\.\d{1,3}', '', timestamp))
+        given_timestamp = datetime.datetime.strptime(modified_timestamp, '%Y-%m-%dT%H:%M:%S%Z')
+        now_timestamp = datetime.datetime.now()
+        delta: datetime.timedelta = now_timestamp - given_timestamp
+        return f"{delta / datetime.timedelta(hours=1):.1f}".replace('.', decimal_separator)
+    except:
+        return "?"
 
 
 # default values
