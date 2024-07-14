@@ -18,23 +18,42 @@ config.read("config.ini")
 
 
 def fhem_task(fhem_cmd):
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((config['FHEM']['host'], int(config['FHEM']['telnet_port'])))
-    s.send(str.encode(config['FHEM']['password'] + "\n", 'ascii'))
-    s.recv(4000)
-    s.send((fhem_cmd + "\n").encode('ascii'))
-    time.sleep(0.1)
-    result = s.recv(128000)
-    return result[5:-2].decode('ascii')
+    decoded_result = None
+    counter = 1
+
+    while not decoded_result and counter <= 3:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((config['FHEM']['host'], int(config['FHEM']['telnet_port'])))
+        s.send(str.encode(config['FHEM']['password'] + "\n", 'ascii'))
+        s.recv(4000)
+        s.send((fhem_cmd + "\n").encode('ascii'))
+        time.sleep(0.1)
+        result = s.recv(128000)
+        decoded_result = result[5:-2].decode('ascii')
+        counter += 1
+
+    return decoded_result
+
+
+def calculate_delta(timestamp, tz) -> datetime.timedelta:
+    modified_timestamp = re.sub(r'Z', 'UTC', re.sub(r'\.\d{1,3}', '', timestamp))
+    given_timestamp = datetime.datetime.strptime(modified_timestamp, '%Y-%m-%dT%H:%M:%S%Z')
+    given_timestamp = given_timestamp.replace(tzinfo=tz)
+    now_timestamp = datetime.datetime.now(tz=given_timestamp.tzinfo)
+    return now_timestamp - given_timestamp
+
+
+def age_minutes(timestamp: str, tz: datetime.tzinfo = None):
+    try:
+        delta = calculate_delta(timestamp, tz)
+        return f"{delta / datetime.timedelta(minutes=1):.0f}"
+    except:
+        return "?"
 
 
 def age_hours(timestamp: str, decimal_separator: str = ".", tz: datetime.tzinfo = None):
     try:
-        modified_timestamp = re.sub(r'Z', 'UTC', re.sub(r'\.\d{1,3}', '', timestamp))
-        given_timestamp = datetime.datetime.strptime(modified_timestamp, '%Y-%m-%dT%H:%M:%S%Z')
-        given_timestamp = given_timestamp.replace(tzinfo=tz)
-        now_timestamp = datetime.datetime.now(tz=given_timestamp.tzinfo)
-        delta: datetime.timedelta = now_timestamp - given_timestamp
+        delta = calculate_delta(timestamp, tz)
         return f"{delta / datetime.timedelta(hours=1):.1f}".replace('.', decimal_separator)
     except:
         return "?"
