@@ -28,11 +28,12 @@ def fhem_task(fhem_cmd):
     return result[5:-2].decode('ascii')
 
 
-def age_hours(timestamp: str, decimal_separator: str = "."):
+def age_hours(timestamp: str, decimal_separator: str = ".", tz: datetime.tzinfo = None):
     try:
         modified_timestamp = re.sub(r'Z', 'UTC', re.sub(r'\.\d{1,3}', '', timestamp))
         given_timestamp = datetime.datetime.strptime(modified_timestamp, '%Y-%m-%dT%H:%M:%S%Z')
-        now_timestamp = datetime.datetime.now()
+        given_timestamp = given_timestamp.replace(tzinfo=tz)
+        now_timestamp = datetime.datetime.now(tz=given_timestamp.tzinfo)
         delta: datetime.timedelta = now_timestamp - given_timestamp
         return f"{delta / datetime.timedelta(hours=1):.1f}".replace('.', decimal_separator)
     except:
